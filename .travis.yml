@@ -10,7 +10,7 @@ services:
 
 before_install:
 - docker pull influxdb
-- docker run -p 8086:8086 influxdb
+- docker run -d -p 8086:8086 -v /var/lib/influxdb influxdb
 - docker ps -a
 
 script:
