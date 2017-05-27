@@ -13,6 +13,9 @@ ADD . /go/src/github.com/dlaize/statusok
 
 # cli is a simple, fast, and fun package for building command line apps in Go
 RUN go get github.com/urfave/cli
+RUN go get github.com/Sirupsen/logrus
+RUN go get github.com/influxdata/influxdb/client/v2
+RUN go get github.com/mailgun/mailgun-go
 # Run influxdb with docker
 #RUN go get github.com/influxdb/influxdb
 #RUN go get github.com/mailgun/mailgun-go
