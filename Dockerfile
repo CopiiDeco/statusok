@@ -5,7 +5,7 @@
 FROM golang
 
 # Copy the local package files to the container's workspace.
-ADD . /go/src/github.com/dlaize/StatusOk
+ADD . /go/src/github.com/dlaize/statusok
 
 # Build the outyet command inside the container.
 # (You may fetch or manage dependencies here,
@@ -16,7 +16,7 @@ RUN go get github.com/urfave/cli
 # Run influxdb with docker
 #RUN go get github.com/influxdb/influxdb
 #RUN go get github.com/mailgun/mailgun-go
-RUN go install github.com/dlaize/StatusOk
+RUN go install github.com/dlaize/statusok
 
 #RUN wget http://influxdb.s3.amazonaws.com/influxdb_0.9.3_amd64.deb
 #RUN dpkg -i influxdb_0.9.3_amd64.deb
@@ -30,7 +30,7 @@ RUN go install github.com/dlaize/StatusOk
 
 #how to connect to localhost inside ?? http://stackoverflow.com/questions/24319662/from-inside-of-a-docker-container-how-do-i-connect-to-the-localhost-of-the-mach
 
-ENTRYPOINT /go/bin/StatusOk --config /go/src/github.com/dlaize/StatusOk/config.json
+ENTRYPOINT /go/bin/statusok --config /go/src/github.com/dlaize/statusok/config.json
 
 # Document that the service listens 
 #8086 influxdb
