@@ -20,7 +20,7 @@ RUN go get github.com/mailgun/mailgun-go
 #RUN go get github.com/influxdb/influxdb
 #RUN go get github.com/mailgun/mailgun-go
 #RUN go install github.com/dlaize/statusok
-RUN GOOS=linux GOARCH=arm64 GOARM=8 go build -v
+RUN GOOS=linux GOARCH=arm64 GOARM=8 go build github.com/dlaize/statusok -v
 
 #RUN wget http://influxdb.s3.amazonaws.com/influxdb_0.9.3_amd64.deb
 #RUN dpkg -i influxdb_0.9.3_amd64.deb
