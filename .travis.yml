@@ -1,3 +1,4 @@
+
 sudo: required
 
 language: go
@@ -17,4 +18,4 @@ script:
  - go test -v ./...
  - go build
  - docker build -t dlaize/statusok .
- - docker push dlaize/statusok
+#todo - docker push dlaize/statusok
