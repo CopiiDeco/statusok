@@ -1,8 +1,21 @@
 # Donot use this Dockerfile.This is not ready yet.
 
-# Start from a Debian image with the latest version of Go installed
-# and a workspace (GOPATH) configured at /go.
-FROM golang
+# Start from raspbian and install Go
+FROM resin/rpi-raspbian
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+       curl gcc libc6-dev libc6 \
+       --no-install-recommends
+
+ENV GO_VERSION 1.8
+
+RUN curl -sSL https://storage.googleapis.com/golang/go$GO_VERSION.linux-armv6l.tar.gz -o /tmp/go.tar.gz && \
+    tar -C /usr/local -vxzf /tmp/go.tar.gz && \
+    rm /tmp/go.tar.gz
+
+ENV PATH /go/bin:/usr/local/go/bin:$PATH
+ENV GOPATH /go:/go/src/app/_gopath
 
 # Copy the local package files to the container's workspace.
 ADD . /go/src/github.com/dlaize/statusok
@@ -16,12 +29,10 @@ RUN go get github.com/urfave/cli
 RUN go get github.com/Sirupsen/logrus
 RUN go get github.com/influxdata/influxdb/client/v2
 RUN go get github.com/mailgun/mailgun-go
-# Run influxdb with docker
-#RUN go get github.com/influxdb/influxdb
-#RUN go get github.com/mailgun/mailgun-go
 #RUN go install github.com/dlaize/statusok
 RUN GOOS=linux GOARCH=arm64 GOARM=7 go build github.com/dlaize/statusok
 
+# Run influxdb with docker
 #RUN wget http://influxdb.s3.amazonaws.com/influxdb_0.9.3_amd64.deb
 #RUN dpkg -i influxdb_0.9.3_amd64.deb
 #RUN /etc/init.d/influxdb start
