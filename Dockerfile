@@ -5,7 +5,7 @@ FROM resin/rpi-raspbian
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-       curl gcc libc6-dev libc6 \
+       curl gcc libc6-dev libc6 git \
        --no-install-recommends
 
 ENV GO_VERSION 1.8
