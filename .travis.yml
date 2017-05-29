@@ -9,6 +9,13 @@ go:
 services:
   - docker
 
+env:
+  global:
+    - secure: "hok7Z38dMQHclrSUbvLxcOxK39dELRWoTy+biR+iYq/qpqo/A7gK2rLpGp1pQA7mngojJqsgllm9xsJ2YzIB6+YH+WvVS01+Sob9f38FdWtnS7Kxp3SvfsJGp9p/EUsUn9hu3qtPEPnPizLFV0ZDStDOhc49rSxP5mLY9DTO1kksF0hkKJ789K2dM8g5ve0+sXclAXa32EJJzC8rgyBoBlw4/qZheglK5xGK8JrWT+PK2jToH17hvZOqmbNa3Zwrim/gDeOdQ+9hCTpWsNBPiMEiJl1sH92Ry/QmcJWwbTgXzB7TTALjlN8ecGZGuOnOxk6+arXtn+y5bblIOmGNSnJPOfUWIPH+khTq+JOXBGgjT+Va1Ck3z6hga9Ob0rZlfRxNaVJCrghvysPWrmJaM3wztLXPy0A7z/DmMTmyRhwhhKWeI+X2yLVN2xJEcKw254w3FqjlVuZqLCvW4iCGhbyfFaAatclU7udFkH50IqLdY9YE/H7wEGM5IPggmwm/58LHH8/srZpYGqAguAzh9qk2cwqR/pmkOJpDmPPa0GyLLHMvobmihwMNVmRTFTJPlIRSCUJl4DweXp9YuXqU7pGsdiWlfgMmtea5E45ypZV9nGOXrYZYyMrRA9/SxkYQsasScjL0ffRhlMQL5FLKJl1z6hwuoyXZq8UFpdJqP34=" # DOCKER_EMAIL
+    - secure: "pn8L0tME0Ni6ItuJYNqWhvKV4o2BPUkAGxyuPAZ3Vvzm4fIZMy7o31fHM/V/CJ3mMSQV2149/Ul2/MwSAMoOvg+cDhauQRj4+hVWLWcrw173Byrs4MuvTo8BZH60dRtpN3/LX25OhjbG6Fuesi3vMtMv6vFa0ZT/pwxAWtFDDf+ePJQSGKTRzlagdSSagPQnDNpzDOFWGkl97+9rDz70sm9CgLggcv0xtjk1fs0hBPwOlHtZtmI5jCazvNSwEz8/XH4kKTkGtemHYI8Qr6GHz0VYOzo4wA9uUcdzArgcHBweng7HvipjEoG95jnvEnN3tfPBKyIm3fRnrjZf6H7sgIh78/o1Z8pjITE3cxCootrkjSf3COXFtl9LsF3HbeTf8dndh35+UxzT4rgl2YyZC5YDNXuH/tvcwZo6ywl7iOJWFNoTqfTKRLu6we0mr91uvtOs/+OChrc7noHyjfkwjMznFyhFeoYX++uIvjfGl4RR8wGTEZ1yLUjYbqeKIQdE0ghctlZ2UQ+wLugP8cy1z+Ks9rQa/4P/SjQNGSjksnoKZLWCzEkBGe9YI9LtQUydzJhzBbSm8wlbZBFdE9VyNbYdmIvv2aNhaRODrECR8YR51UgmAcmWcBXSxF24j9faF3Epxycg1/nkbs04RnHRjMDf7dnCoQ551HpgfjutlkY=" # DOCKER_USER
+    - secure: "gc+Z2dSyVx4qjGq+113uMWtsDC0VSycCMmUjGynWa85gsirY0WDR6uIv1KiAmo3nYWkF5Tb/6ZlFaHaV5xQUc7v/rWNKIDoaiT3uuW+/c2MRszN8JERWprRUKbE3ROnUWmcN7Ofba463SpiG+2W860PmA7CBtfA9E3q8l4NcXaafuykZ4T47F06w8Eccs1kw4Grqu/zDtP2Khq0nIa6Rif5bQO/OjSOBLWY7o+3KYXX7BGkxrcbesXnf4+2FvfUNNze0GMikt51j5jAuOUDf3KtCs4ZwPPhvCATd5AbGMY3UV+NW53bP/5iMDkCqNCOFMlAJylzJf7uJbmfsoKqIriw68hOqWr7Fe+FlGYiYI26cXg/75xtokPerj2UhfXCL2Iu954odn3JtPvxQoi8dLPsG+tfYvF3UZA36WS8KEE30ILVMNiakMVEerxmtPRDYJUisfG2VsW0QHhG4Uh5CMZDOu/gWlEmvsPs6hoNKe+i04Rk2l1tdsZqY20f0Pigqq6XH1Dug0JVEJEiFB/PEu+Lrzu5Ts2g9W8g0QM8x3/JT+9qE43qyazwyMVRjR5TWGduZrBUoZ8EnwIvwJxvSRT5JkHl+dqaT7BKPbj4oBTp3aZArfT0stteynrhJCVztmM/1LLMu4VtjdKishZXoIflSzBF4hwFctBZxvt9WakY=" # DOCKER_PASS
+    - COMMIT=${TRAVIS_COMMIT::8}
+
 before_install:
 - docker pull influxdb
 - docker run -d -p 8086:8086 -v /var/lib/influxdb influxdb
@@ -17,5 +24,15 @@ before_install:
 script:
  - go test -v ./...
  - go build
- - docker build -t dlaize/statusok .
-#todo - docker push dlaize/statusok
+ #- docker build -t dlaize/statusok .
+
+
+#https://graysonkoonce.com/getting-the-current-branch-name-during-a-pull-request-in-travis-ci/
+after_success:
+  - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+  - export REPO=dlaize/statusok
+  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
+  - docker build -f Dockerfile -t $REPO:$COMMIT .
+  - docker tag $REPO:$COMMIT $REPO:$TAG
+  - docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
+  - docker push $REPO
