@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/dlaize/statusok.svg?branch=master)](https://travis-ci.org/dlaize/statusok)
+
+Fork to test on RaspberryPi
+
 # StatusOK
 
 Monitor your Website and APIs from your computer.Get notified through Slack or E-mail when your server is down or response time is more than expected.
