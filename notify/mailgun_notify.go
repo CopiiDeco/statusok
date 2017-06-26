@@ -3,8 +3,9 @@ package notify
 import (
 	"errors"
 	"fmt"
-	"github.com/mailgun/mailgun-go"
 	"strings"
+
+	"github.com/mailgun/mailgun-go"
 )
 
 var mailGunClient mailgun.Mailgun
@@ -33,9 +34,9 @@ func (mailgunNotify MailgunNotify) Initialize() error {
 		return errors.New("Mailgun: Invalid Domain name")
 	}
 
-	if len(strings.TrimSpace(mailgunNotify.PublicApiKey)) == 0 {
-		return errors.New("Mailgun: Invalid PublicApiKey")
-	}
+	// if len(strings.TrimSpace(mailgunNotify.PublicApiKey)) == 0 {
+	// 	return errors.New("Mailgun: Invalid PublicApiKey")
+	// }
 
 	mailGunClient = mailgun.NewMailgun(mailgunNotify.Domain, mailgunNotify.ApiKey, mailgunNotify.PublicApiKey)
 
