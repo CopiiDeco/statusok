@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/CopiiDeco/statusok/database"
+	"github.com/CopiiDeco/statusok/notify"
+	"github.com/CopiiDeco/statusok/requests"
 	"github.com/urfave/cli"
-	"github.com/dlaize/statusok/database"
-	"github.com/dlaize/statusok/notify"
-	"github.com/dlaize/statusok/requests"
 	"io"
 	"math/rand"
 	"net/http"
