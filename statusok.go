@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/CopiiDeco/statusok/database"
+	"github.com/CopiiDeco/statusok/notify"
+	"github.com/CopiiDeco/statusok/requests"
 	"github.com/codegangsta/cli"
-	"github.com/sanathp/statusok/database"
-	"github.com/sanathp/statusok/notify"
-	"github.com/sanathp/statusok/requests"
 	"io"
 	"math/rand"
 	"net/http"
