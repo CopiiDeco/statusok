@@ -4,7 +4,7 @@ ENV STATUSOK_VERSION 0.1.1
 
 RUN apt-get update \
     && apt-get install -y unzip \
-    && wget https://github.com/sanathp/statusok/releases/download/$STATUSOK_VERSION/statusok_linux.zip \
+    && wget https://github.com/CopiiDeco/statusok/releases/download/$STATUSOK_VERSION/statusok_linux.zip \
     && unzip statusok_linux.zip \
     && mv ./statusok_linux/statusok /go/bin/StatusOk \
     && rm -rf ./statusok_linux* \
