@@ -53,6 +53,8 @@ func AddNew(notificationTypes NotificationTypes) {
 	for i := 0; i < v.NumField(); i++ {
 		notifyString := fmt.Sprint(v.Field(i).Interface().(Notify))
 		//Check whether notify object is empty . if its not empty add to the list
+
+		println("notifyString ", notifyString)
 		if !isEmptyObject(notifyString) {
 			notificationsList = append(notificationsList, v.Field(i).Interface().(Notify))
 		}
