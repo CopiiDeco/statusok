@@ -1,18 +1,13 @@
-FROM golang:1.6.3
+FROM golang:1.7.3 AS builder
+WORKDIR /go/src/github.com/CopiiDeco/statusok/
+RUN go get -d -v github.com/codegangsta/cli   
+COPY statuook.go    .
+RUN env GOOS=linux GOARCH=arm go build 
 
-ENV STATUSOK_VERSION 0.1.1
-
-RUN apt-get update \
-    && apt-get install -y unzip \
-    && wget https://github.com/CopiiDeco/statusok/releases/download/$STATUSOK_VERSION/statusok_linux.zip \
-    && unzip statusok_linux.zip \
-    && mv ./statusok_linux/statusok /go/bin/StatusOk \
-    && rm -rf ./statusok_linux* \
-    && apt-get remove -y unzip git \
-    && apt-get autoremove -y \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
+FROM alpine:latest  
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /go/src/github.com/alexellis/href-counter/app .
 VOLUME /config
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 ENTRYPOINT /docker-entrypoint.sh
