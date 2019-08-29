@@ -1,18 +1,22 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"math/rand"
+	"net/http"
+	"os"
+	"time"
+
+	"cloud.google.com/go/storage"
 	"github.com/CopiiDeco/statusok/database"
 	"github.com/CopiiDeco/statusok/notify"
 	"github.com/CopiiDeco/statusok/requests"
 	"github.com/codegangsta/cli"
-	"io"
-	"math/rand"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
 )
 
 type configParser struct {
@@ -29,8 +33,52 @@ type NotifyWhen struct {
 	ErrorCount        int `json:"errorCount"`
 }
 
+func handler(w http.ResponseWriter, r *http.Request) {
+	log.Print("Hello world received a request.")
+	target := os.Getenv("TARGET")
+	if target == "" {
+		target = "World"
+	}
+	fmt.Fprintf(w, "Hello %s!\n", target)
+}
+
+func read(client *storage.Client, bucket, object string) ([]byte, error) {
+	ctx := context.Background()
+	// [START download_file]
+	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	data, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+	// [END download_file]
+}
+
+func bucketReader(bucket string, filename string) (data []byte, err error) {
+	ctx := context.Background()
+	// Creates a client.
+	client, err := storage.NewClient(ctx)
+	log.Print("Reading the bucket")
+	if err != nil {
+		log.Fatalf("Failed to create client: %v", err)
+	}
+	data, err = read(client, bucket, filename)
+	if err != nil {
+		log.Fatalf("Cannot read object: %v", err)
+	}
+
+	log.Print("Config obtained from the bucket")
+	return data, nil
+}
+
 func main() {
 
+	log.Print("Starting the app")
 	//Cli tool setup to get config file path from parameters
 	app := cli.NewApp()
 	app.Name = "StatusOk"
@@ -50,46 +98,38 @@ func main() {
 	}
 
 	app.Action = func(c *cli.Context) {
+		bucket := os.Getenv("BUCKET")
+		configFileName := os.Getenv("CONFIG_FILE_NAME")
 
-		if fileExists(c.String("config")) {
-
-			if len(c.String("log")) != 0 {
-				//log parameter given.Check if file can be created at given path
-
-				if !logFilePathValid(c.String("log")) {
-					println("Invalid File Path given for parameter --log")
-					os.Exit(3)
+		config, err := bucketReader(bucket, configFileName)
+		if err == nil {
+			log.Print("Entering the start sequence")
+			configString := string(config)
+			if configString != "" {
+				log.Print("Checks passed starting monitoring")
+				err := startMonitoring(configString, "")
+				if err != nil {
+					log.Fatal(err)
 				}
+			} else {
+				log.Fatal("Config not present\nPlease give correct configuration using JSON_CONFIG env variable")
 			}
-
-			println("Reading File :", c.String("config"))
-
-			//Start monitoring when a valid file path is given
-			startMonitoring(c.String("config"), c.String("log"))
 		} else {
-			println("Config file not present at the given location: ", c.String("config"), "\nPlease give correct file location using --config parameter")
+			fmt.Errorf("Error while fetching the file from the bucket : %s", err)
 		}
-
 	}
 
 	//Run as cli app
 	app.Run(os.Args)
+
 }
 
-func startMonitoring(configFileName string, logFileName string) {
+func startMonitoring(configFile string, logFileName string) error {
 
-	configFile, err := os.Open(configFileName)
-
-	if err != nil {
-		fmt.Println("Error opening config file:\n", err.Error())
-	}
-
-	//parse the config file data to configParser struct
-	jsonParser := json.NewDecoder(configFile)
 	var config configParser
-	if err = jsonParser.Decode(&config); err != nil {
-		fmt.Println("Error parsing config file .Please check format of the file \nParse Error:", err.Error())
-		os.Exit(3)
+	log.Print("Parsing the config")
+	if err := json.Unmarshal([]byte(configFile), &config); err != nil {
+		return fmt.Errorf("Error parsing config file .Please check format of the file, parse error: %s", err.Error())
 	}
 	fmt.Println("parsed ", config.Notifications.Dingding)
 	//setup different notification clients
@@ -113,13 +153,15 @@ func startMonitoring(configFileName string, logFileName string) {
 	//Just to check StatusOk is running or not
 	http.HandleFunc("/", statusHandler)
 
-	if config.Port == 0 {
+	port := os.Getenv("PORT")
+	if port == "" {
 		//Default port
-		http.ListenAndServe(":7321", nil)
+		http.ListenAndServe(":8080", nil)
 	} else {
 		//if port is mentioned in config file
-		http.ListenAndServe(":"+strconv.Itoa(config.Port), nil)
+		http.ListenAndServe(":"+port, nil)
 	}
+	return nil
 }
 
 //Currently just tells status ok is running

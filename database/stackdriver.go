@@ -5,11 +5,13 @@ import (
 	"log"
 
 	"cloud.google.com/go/logging"
+	"google.golang.org/api/option"
 )
 
 type Stackdriver struct {
-	ProjectId string `json:"projectId"`
-	LogName   string `json:"logName"`
+	ProjectId              string `json:"projectId"`
+	LogName                string `json:"logName"`
+	ServiceAccountFilePath string `json:"serviceAccountFilePath"`
 }
 
 var (
@@ -27,13 +29,19 @@ func (stackdriver Stackdriver) printLog(severity logging.Severity, message inter
 	println("Stackdriver : Trying to Connect to database ")
 	// Sets your Google Cloud Platform project ID.
 	projectID := stackdriver.ProjectId
+	serviceAccountFilePath := stackdriver.ServiceAccountFilePath
 	var err error
 	// Creates a client.
-	StackdriverCon, err = logging.NewClient(ctx, projectID)
-	if err != nil {
-		log.Println("Failed to create client: %v", err)
-		return err
+	if serviceAccountFilePath != "" {
+		StackdriverCon, err = logging.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccountFilePath))
+		if err != nil {
+			log.Println("Failed to create client: ", err)
+			return err
+		}
+	} else {
+		StackdriverCon, err = logging.NewClient(ctx, projectID)
 	}
+
 	defer StackdriverCon.Close()
 
 	// Sets the name of the log to write to.
