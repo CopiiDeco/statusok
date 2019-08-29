@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/CopiiDeco/statusok/notify"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var (
