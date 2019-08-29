@@ -91,7 +91,7 @@ func startMonitoring(configFileName string, logFileName string) {
 		fmt.Println("Error parsing config file .Please check format of the file \nParse Error:", err.Error())
 		os.Exit(3)
 	}
-
+	fmt.Println("parsed ", config.Notifications.Dingding)
 	//setup different notification clients
 	notify.AddNew(config.Notifications)
 	//Send test notifications to all the notification clients

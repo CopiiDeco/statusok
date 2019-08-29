@@ -54,7 +54,8 @@ type Database interface {
 }
 
 type DatabaseTypes struct {
-	InfluxDb InfluxDb `json:"influxDb"`
+	InfluxDb    InfluxDb    `json:"influxDb"`
+	Stackdriver Stackdriver `json:"stackDriver"`
 }
 
 //Intialize responseMean app and counts
