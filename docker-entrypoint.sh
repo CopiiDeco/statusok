@@ -1,3 +1,3 @@
 #!/bin/sh
 set -e
-/go/bin/StatusOk --config /config/config.json
+/root/statusok --config /config/config.json

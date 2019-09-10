@@ -5,7 +5,7 @@ COPY statusok.go ./
 COPY database ./database/
 COPY notify ./notify/
 COPY requests ./requests/
-RUN env CGO_ENABLED=0 GOOS=linux GOARCH=arm go build  -a -installsuffix cgo 
+RUN env CGO_ENABLED=0 GOOS=linux go build 
 
 FROM alpine:latest  
 RUN apk --no-cache add ca-certificates
