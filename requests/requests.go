@@ -40,12 +40,12 @@ type OauthCredentials struct {
 }
 
 type OauthResponse struct {
-	Error        string `json:"error"`
-	ErrorMessage string `json:"error_description"`
-	AccessToken     string `json:"access_token"`
-	TokenType     string `json:"token_type"`
-	ExpiresIn     string `json:"expires_in"`
-	Scope     string `json:"scope"`
+	Error        	string 	`json:"error"`
+	ErrorMessage 	string 	`json:"error_description"`
+	AccessToken     string 	`json:"access_token"`
+	TokenType     	string 	`json:"token_type"`
+	ExpiresIn     	int 	`json:"expires_in"`
+	Scope     		string 	`json:"scope"`
 }
 
 type RequestConfig struct {
@@ -126,7 +126,7 @@ func RequestsInit(data []RequestConfig, concurrency int) {
 
 		if reqErr != nil {
 			//Request Failed
-			println("\nFailed !!!! Not able to perfome below request")
+			println("\nFailed !!!! Not able to perfom below request")
 			println("\n----Request Deatails---")
 			println("Url :", requestConfig.Url)
 			println("Type :", requestConfig.RequestType)
@@ -198,17 +198,15 @@ func GetOauthToken(oauthCreds OauthCredentials) (string, error){
 
 	if err != nil {
 		return "", err
-	} else {
-		data, _ := ioutil.ReadAll(res.Body)
-		fmt.Println(string(data))
-		var oauthResponse OauthResponse
-		err := json.Unmarshal(data, &oauthResponse)
-		if err != nil {
-			return "", err
-		} else {
-			return "Bearer oauthResponse.AccessToken", err
-		}
 	}
+	data, _ := ioutil.ReadAll(res.Body)
+	var oauthResponse OauthResponse
+	err = json.Unmarshal(data, &oauthResponse)
+	if err != nil {
+		return "", err
+	}
+	return "Bearer "+oauthResponse.AccessToken, err
+
 
 }
 //takes the date from requestConfig and creates http request and executes it
@@ -297,9 +295,8 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 		oauthToken, reqErr := GetOauthToken(*requestConfig.OauthCreds)
 		if reqErr == nil {
 			return reqErr
-		} else {
-			requestConfig.Headers["Authorization"]=oauthToken
 		}
+		requestConfig.Headers["Authorization"]=oauthToken
 	}
 
 	//Add headers to the request
