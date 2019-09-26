@@ -2,6 +2,7 @@ package notify
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io"
@@ -9,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+var Client *http.Client
 
 type SlackNotify struct {
 	Username          string `json:"username"`
@@ -30,14 +33,16 @@ func (slackNotify SlackNotify) GetClientName() string {
 
 func (slackNotify SlackNotify) Initialize() error {
 
+	Client = &http.Client{Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}}
+
 	if len(strings.TrimSpace(slackNotify.Username)) == 0 {
 		return errors.New("Slack: Username is a required field")
 	}
-
 	if len(strings.TrimSpace(slackNotify.ChannelWebhookURL)) == 0 {
 		return errors.New("Slack: channelWebhookURL is a required field")
 	}
-
 	return nil
 }
 
@@ -51,7 +56,7 @@ func (slackNotify SlackNotify) SendResponseTimeNotification(responseTimeNotifica
 		return jsonErr
 	}
 
-	getResponse, respErr := http.Post(slackNotify.ChannelWebhookURL, "application/json", payload)
+	getResponse, respErr := Client.Post(slackNotify.ChannelWebhookURL, "application/json", payload)
 
 	if respErr != nil {
 		return respErr
@@ -76,7 +81,7 @@ func (slackNotify SlackNotify) SendErrorNotification(errorNotification ErrorNoti
 		return jsonErr
 	}
 
-	getResponse, respErr := http.Post(slackNotify.ChannelWebhookURL, "application/json", payload)
+	getResponse, respErr := Client.Post(slackNotify.ChannelWebhookURL, "application/json", payload)
 
 	if respErr != nil {
 		return respErr

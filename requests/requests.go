@@ -2,10 +2,10 @@ package requests
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/CopiiDeco/statusok/database"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,7 +14,17 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/CopiiDeco/statusok/database"
 )
+
+var Client *http.Client
+
+func Init() {
+	Client = &http.Client{Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}}
+}
 
 var (
 	RequestsList   []RequestConfig
@@ -40,17 +50,17 @@ type OauthCredentials struct {
 }
 
 type OauthResponse struct {
-	Error        	string 	`json:"error"`
-	ErrorMessage 	string 	`json:"error_description"`
-	AccessToken     string 	`json:"access_token"`
-	TokenType     	string 	`json:"token_type"`
-	ExpiresIn     	int 	`json:"expires_in"`
-	Scope     		string 	`json:"scope"`
+	Error        string `json:"error"`
+	ErrorMessage string `json:"error_description"`
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+	Scope        string `json:"scope"`
 }
 
 type RequestConfig struct {
 	Id           int
-	OauthCreds   *OauthCredentials  `json:"oAuthCreds"`
+	OauthCreds   *OauthCredentials `json:"oAuthCreds"`
 	Url          string            `json:"url"`
 	RequestType  string            `json:"requestType"`
 	Headers      map[string]string `json:"headers"`
@@ -181,36 +191,58 @@ func listenToRequestChannel() {
 
 }
 
-func GetOauthToken(oauthCreds OauthCredentials) (string, error){
-
+func GetOauthToken(requestConfig RequestConfig) (string, error) {
+	if Client == nil {
+		Init()
+	}
 	//Get a new Oauth token since Token credentials have been defined
 
-	payload := strings.NewReader("client_id="+oauthCreds.ClientID+"&client_secret="+oauthCreds.ClientSecret+"&grant_type=client_credentials")
+	payload := strings.NewReader("client_id=" + requestConfig.OauthCreds.ClientID + "&client_secret=" + requestConfig.OauthCreds.ClientSecret + "&grant_type=client_credentials")
 
-	req, _ := http.NewRequest("POST", oauthCreds.OauthServer, payload)
+	req, _ := http.NewRequest("POST", requestConfig.OauthCreds.OauthServer, payload)
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("cache-control", "no-cache")
 
-	res, err := http.DefaultClient.Do(req)
+	res, respErr := Client.Do(req)
 
 	defer res.Body.Close()
 
-	if err != nil {
-		return "", err
+	if respErr != nil {
+		//Request failed . Add error info to database
+		var statusCode int
+		if res == nil {
+			statusCode = 0
+		} else {
+			statusCode = res.StatusCode
+		}
+		go database.AddErrorInfo(database.ErrorInfo{
+			Id:           requestConfig.Id,
+			Url:          requestConfig.Url,
+			RequestType:  requestConfig.RequestType,
+			ResponseCode: statusCode,
+			ResponseBody: convertResponseToString(res),
+			Reason:       database.ErrDoRequest,
+			OtherInfo:    respErr.Error(),
+		})
+		return "", respErr
 	}
+
 	data, _ := ioutil.ReadAll(res.Body)
 	var oauthResponse OauthResponse
-	err = json.Unmarshal(data, &oauthResponse)
-	if err != nil {
-		return "", err
+	respErr = json.Unmarshal(data, &oauthResponse)
+	if respErr != nil {
+		return "", respErr
 	}
-	return "Bearer "+oauthResponse.AccessToken, err
-
+	return "Bearer " + oauthResponse.AccessToken, respErr
 
 }
+
 //takes the date from requestConfig and creates http request and executes it
 func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
+	if Client == nil {
+		Init()
+	}
 	//Remove value from throttel channel when request is completed
 	defer func() {
 		if throttle != nil {
@@ -220,13 +252,11 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 
 	var request *http.Request
 	var reqErr error
-
 	if len(requestConfig.FormParams) == 0 {
 		//formParams create a request
 		request, reqErr = http.NewRequest(requestConfig.RequestType,
 			requestConfig.Url,
 			nil)
-
 	} else {
 		if requestConfig.Headers[ContentType] == JsonContentType {
 			//create a request using using formParams
@@ -265,6 +295,7 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 				//Default content type application/x-www-form-urlencoded
 				request.Header.Add(ContentType, FormContentType)
 			}
+
 		}
 	}
 
@@ -285,39 +316,28 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 
 	//add url parameters to query if present
 	if len(requestConfig.UrlParams) != 0 {
+		println("Retrieving Oauth token")
 		urlParams := GetUrlValues(requestConfig.UrlParams)
 		request.URL.RawQuery = urlParams.Encode()
 	}
 
-
 	if requestConfig.OauthCreds != nil {
 
-		oauthToken, reqErr := GetOauthToken(*requestConfig.OauthCreds)
-		if reqErr == nil {
-			return reqErr
+		oauthToken, reqErr := GetOauthToken(requestConfig)
+		if reqErr != nil || oauthToken == "" {
+			return errors.New(fmt.Sprintf("%v", reqErr))
+		} else if oauthToken == "" {
+			return errors.New(fmt.Sprintf("Couldn't retrieve the Oauth token, it was empty"))
 		}
-		requestConfig.Headers["Authorization"]=oauthToken
+		requestConfig.Headers["Authorization"] = oauthToken
 	}
 
 	//Add headers to the request
 	AddHeaders(request, requestConfig.Headers)
 
-
-
-
-	//TODO: put timeout ?
-	/*
-		timeout := 10 * requestConfig.ResponseTime
-
-		client := &http.Client{
-			Timeout: timeout,
-		}
-	*/
-
-	client := &http.Client{}
 	start := time.Now()
 
-	getResponse, respErr := client.Do(request)
+	getResponse, respErr := Client.Do(request)
 
 	if respErr != nil {
 		//Request failed . Add error info to database
@@ -354,7 +374,6 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 		})
 		return errResposeCode(getResponse.StatusCode, requestConfig.ResponseCode)
 	}
-
 	elapsed := time.Since(start)
 
 	//Request succesfull . Add infomartion to Database

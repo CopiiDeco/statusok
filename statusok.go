@@ -79,6 +79,8 @@ func bucketReader(bucket string, filename string) (data []byte, err error) {
 func main() {
 
 	log.Print("Starting the app")
+
+	client := &http.Client{}
 	//Cli tool setup to get config file path from parameters
 	app := cli.NewApp()
 	app.Name = "StatusOk"
@@ -107,7 +109,7 @@ func main() {
 			configString := string(config)
 			if configString != "" {
 				log.Print("Checks passed starting monitoring")
-				err := startMonitoring(configString, "")
+				err := startMonitoring(configString, "", client)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -124,7 +126,7 @@ func main() {
 
 }
 
-func startMonitoring(configFile string, logFileName string) error {
+func startMonitoring(configFile string, logFileName string, client *http.Client) error {
 
 	var config configParser
 	log.Print("Parsing the config")

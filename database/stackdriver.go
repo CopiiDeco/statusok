@@ -26,7 +26,7 @@ func (stackdriver Stackdriver) GetDatabaseName() string {
 
 func (stackdriver Stackdriver) printLog(severity logging.Severity, message interface{}) error {
 	ctx := context.Background()
-	println("Stackdriver : Trying to Connect to database ")
+	println("Stackdriver logging ")
 	// Sets your Google Cloud Platform project ID.
 	projectID := stackdriver.ProjectId
 	serviceAccountFilePath := stackdriver.ServiceAccountFilePath
