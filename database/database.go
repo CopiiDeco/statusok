@@ -3,12 +3,12 @@ package database
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"strings"
 
 	"github.com/CopiiDeco/statusok/notify"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -19,10 +19,10 @@ var (
 	responseMean map[int][]int64 //A map of queues to calculate mean response time
 	dbMain       Database
 
-	ErrResposeCode   = errors.New("response code do not match")
-	ErrTimeout       = errors.New("request time out error")
-	ErrCreateRequest = errors.New("invalid request config, not able to create request")
-	ErrDoRequest     = errors.New("request failed")
+	ErrResposeCode   = errors.New("Response code do not Match")
+	ErrTimeout       = errors.New("Request Time out Error")
+	ErrCreateRequest = errors.New("Invalid Request Config.Not able to create request")
+	ErrDoRequest     = errors.New("Request failed")
 
 	isLoggingEnabled = false //default
 )
@@ -54,7 +54,8 @@ type Database interface {
 }
 
 type DatabaseTypes struct {
-	InfluxDb InfluxDb `json:"influxDb"`
+	InfluxDb    InfluxDb    `json:"influxDb"`
+	Stackdriver Stackdriver `json:"stackDriver"`
 }
 
 //Intialize responseMean app and counts
@@ -246,10 +247,11 @@ func EnableLogging(fileName string) {
 	isLoggingEnabled = true
 
 	// Log as JSON instead of the default ASCII formatter.
+	logrus.SetFormatter(&logrus.JSONFormatter{})
 
 	if len(fileName) == 0 {
 		// Output to stderr instead of stdout, could also be a file.
-		log.SetOutput(os.Stderr)
+		logrus.SetOutput(os.Stderr)
 	} else {
 		f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 
@@ -258,14 +260,23 @@ func EnableLogging(fileName string) {
 			os.Exit(3)
 		}
 
-		log.SetOutput(f)
+		logrus.SetOutput(f)
 	}
 
 }
 
 func logErrorInfo(errorInfo ErrorInfo) {
-	if isLoggingEnabled {
 
+	if isLoggingEnabled {
+		logrus.WithFields(logrus.Fields{
+			"id":           errorInfo.Id,
+			"url":          errorInfo.Url,
+			"requestType":  errorInfo.RequestType,
+			"responseCode": errorInfo.ResponseCode,
+			"responseBody": errorInfo.ResponseBody,
+			"reason":       errorInfo.Reason.Error(),
+			"otherInfo":    errorInfo.Reason,
+		}).Error("Status Ok Error occurred for url " + errorInfo.Url)
 	}
 
 }
@@ -273,5 +284,13 @@ func logErrorInfo(errorInfo ErrorInfo) {
 func logRequestInfo(requestInfo RequestInfo) {
 
 	if isLoggingEnabled {
+		logrus.WithFields(logrus.Fields{
+			"id":                   requestInfo.Id,
+			"url":                  requestInfo.Url,
+			"requestType":          requestInfo.RequestType,
+			"responseCode":         requestInfo.ResponseCode,
+			"responseTime":         requestInfo.ResponseTime,
+			"expectedResponseTime": requestInfo.ExpectedResponseTime,
+		}).Info("")
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/influxdata/influxdb/client/v2"
+	"github.com/influxdata/influxdb1-client/v2"
 )
 
 type InfluxDb struct {
@@ -23,12 +23,10 @@ var (
 	influxDBcon client.Client
 )
 
-const (
-	DatabaseName = "InfluxDB"
-)
 
 //Return database name
 func (influxDb InfluxDb) GetDatabaseName() string {
+	var DatabaseName = "InfluxDB"
 	return DatabaseName
 }
 
@@ -83,6 +81,7 @@ func (influxDb InfluxDb) AddRequestInfo(requestInfo RequestInfo) error {
 	tags := map[string]string{
 		"requestId":   strconv.Itoa(requestInfo.Id),
 		"requestType": requestInfo.RequestType,
+		"responseCode": strconv.Itoa(requestInfo.ResponseCode),
 	}
 	fields := map[string]interface{}{
 		"responseTime": requestInfo.ResponseTime,

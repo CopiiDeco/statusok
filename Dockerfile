@@ -1,21 +1,17 @@
-FROM askmike/golang-raspbian
+FROM golang:1.12.7 AS builder
+WORKDIR /go/src/github.com/CopiiDeco/statusok/
+RUN go get google.golang.org/api/option && go get github.com/codegangsta/cli && go get github.com/influxdata/influxdb1-client/v2  && go get cloud.google.com/go/logging && go get github.com/sirupsen/logrus && go get github.com/mailgun/mailgun-go 
+COPY statusok.go ./
+COPY database ./database/
+COPY notify ./notify/
+COPY requests ./requests/
+RUN env CGO_ENABLED=0 GOOS=linux go build 
 
-RUN apt-get update && apt-get install -y --no-install-recommends git && apt-get clean
-
-ENV GOPATH /gopath
-WORKDIR /gopath/src/github.com/dlaize/statusok
-
-RUN mkdir -p /gopath/src/github.com/dlaize/statusok
-ADD . /gopath/src/github.com/dlaize/statusok
-
-RUN cd /gopath/src/github.com/dlaize/statusok
-RUN go get github.com/urfave/cli
-RUN go get github.com/Sirupsen/logrus
-RUN go get github.com/influxdata/influxdb/client/v2
-RUN go get github.com/mailgun/mailgun-go
-RUN go build -o goapp
-
-VOLUME /config-path
-ENTRYPOINT ["./goapp", "--config" ,"/config-path/config.json"]
-
-EXPOSE 7321
+FROM alpine:latest  
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /go/src/github.com/CopiiDeco/statusok/statusok ./
+VOLUME /config
+COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+EXPOSE 8080
+ENTRYPOINT /docker-entrypoint.sh

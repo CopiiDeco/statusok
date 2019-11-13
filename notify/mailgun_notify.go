@@ -4,14 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/mailgun/mailgun-go"
+	"strings"
 )
 
 var mailGunClient mailgun.Mailgun
-var ctx context.Context
 
 type MailgunNotify struct {
 	Email        string `json:"email"`
@@ -26,20 +23,20 @@ func (mailgunNotify MailgunNotify) GetClientName() string {
 
 func (mailgunNotify MailgunNotify) Initialize() error {
 	if !validateEmail(mailgunNotify.Email) {
-		return errors.New("mailgun: invalid email address")
+		return errors.New("Mailgun: Invalid Email Address")
 	}
 
 	if len(strings.TrimSpace(mailgunNotify.ApiKey)) == 0 {
-		return errors.New("mailgun: invalid api key")
+		return errors.New("Mailgun: Invalid Api Key")
 	}
 
 	if len(strings.TrimSpace(mailgunNotify.Domain)) == 0 {
-		return errors.New("mailgun: invalid domain name")
+		return errors.New("Mailgun: Invalid Domain name")
 	}
 
-	// if len(strings.TrimSpace(mailgunNotify.PublicApiKey)) == 0 {
-	// 	return errors.New("Mailgun: Invalid PublicApiKey")
-	// }
+	if len(strings.TrimSpace(mailgunNotify.PublicApiKey)) == 0 {
+		return errors.New("Mailgun: Invalid PublicApiKey")
+	}
 
 	mailGunClient = mailgun.NewMailgun(mailgunNotify.Domain, mailgunNotify.ApiKey)
 
@@ -52,9 +49,7 @@ func (mailgunNotify MailgunNotify) SendResponseTimeNotification(responseTimeNoti
 	message := getMessageFromResponseTimeNotification(responseTimeNotification)
 
 	mail := mailGunClient.NewMessage("StatusOkNotifier <notify@StatusOk.com>", subject, message, fmt.Sprintf("<%s>", mailgunNotify.Email))
-
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*30)
-	_, _, mailgunErr := mailGunClient.Send(ctx, mail)
+	_, _, mailgunErr := mailGunClient.Send(context.Background(), mail)
 
 	if mailgunErr != nil {
 		return mailgunErr
@@ -69,9 +64,7 @@ func (mailgunNotify MailgunNotify) SendErrorNotification(errorNotification Error
 	message := getMessageFromErrorNotification(errorNotification)
 
 	mail := mailGunClient.NewMessage("StatusOkNotifier <notify@StatusOk.com>", subject, message, fmt.Sprintf("<%s>", mailgunNotify.Email))
-
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*30)
-	_, _, mailgunErr := mailGunClient.Send(ctx, mail)
+	_, _, mailgunErr := mailGunClient.Send(context.Background(), mail)
 
 	if mailgunErr != nil {
 		return mailgunErr

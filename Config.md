@@ -5,7 +5,7 @@ Config file should be in JSON format (Support for other formats will be added in
 ## Pattern
 ```
 {
-"notification":{
+"notifications":{
 	//notification clients to send notifications
 	"slack":{
 		"channel":"#general",
@@ -103,7 +103,7 @@ Description for each request parameter.
 | url     | Http Url 
 | requestType     | Http Request Type in all capital letters  e.g. GET,PUT,POST,DELETE 
 | headers     | A list of key value pairs which will be added to header of a request
-| formParams     | A list of key value pairs which will be added to body of the request.By deafult content type is "application/x-www-form-urlencoded".For aplication/json content type add "Content-Type":"application/json" to headers
+| formParams     | A list of key value pairs which will be added to body of the request.By deafult content type is "application/x-www-form-urlencoded".For application/json content type add "Content-Type":"application/json" to headers
 | urlParams     | A list of key value pairs which will be appended to url e.g: http://google.com?name=statusok
 |checkEvery| Time interval in seconds.If the value is 120,the request will be performed every 2 minutes
 |responseCode|Expected response code when a request is performed.Default values is 200.If response code is not equal then an error notification is triggered.
@@ -119,6 +119,7 @@ Notifications will be triggered when mean response time is below given response 
 2)Smtp Server
 3)Mailgun
 4)Http EndPoint
+5)Dingding
 ```
 [Write your own client](https://github.com/sanathp/statusok/blob/master/Config.md#write-your-own-notification-client)
 
@@ -174,6 +175,20 @@ To recieve notifications to any http Endpoint add below block to your config fil
 	}
 }
 ```	
+### Dingding
+To recieve notifications to any Dingding add below block to your config file with request details.
+
+```
+"dingding":{
+        "url": "https://oapi.dingtalk.com/robot/send?access_token=3d21b0b12499ab54e74805",
+        "requestType":"POST",
+        "headers":{
+            "Content-Type":"application/json"
+        }
+}
+```
+[Dingding Dev Document](https://open-doc.dingtalk.com/docs/doc.htm?spm=a219a.7629140.0.0.Tvbh61&treeId=257&articleId=105735&docType=1)
+
 ### Write Your own Notification Client
 
 If you want to recieve Notifications to any other clients. Write a struct with below methods and add the Struct to NotificationTypes in [notify.go](https://github.com/sanathp/statusok/blob/master/notify/notify.go) file.
