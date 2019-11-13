@@ -16,7 +16,7 @@ import (
 	"github.com/CopiiDeco/statusok/database"
 	"github.com/CopiiDeco/statusok/notify"
 	"github.com/CopiiDeco/statusok/requests"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 type configParser struct {

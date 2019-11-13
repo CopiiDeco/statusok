@@ -1,10 +1,11 @@
 FROM golang:1.12.7 AS builder
 WORKDIR /go/src/github.com/CopiiDeco/statusok/
-RUN go get google.golang.org/api/option && go get github.com/codegangsta/cli && go get github.com/influxdata/influxdb1-client/v2  && go get cloud.google.com/go/logging && go get github.com/sirupsen/logrus && go get github.com/mailgun/mailgun-go 
 COPY statusok.go ./
 COPY database ./database/
+COPY go.mod ./
 COPY notify ./notify/
 COPY requests ./requests/
+RUN env GO111MODULE=on go get
 RUN env CGO_ENABLED=0 GOOS=linux go build 
 
 FROM alpine:latest  

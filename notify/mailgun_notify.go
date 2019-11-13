@@ -1,7 +1,6 @@
 package notify
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"github.com/mailgun/mailgun-go"
@@ -49,7 +48,7 @@ func (mailgunNotify MailgunNotify) SendResponseTimeNotification(responseTimeNoti
 	message := getMessageFromResponseTimeNotification(responseTimeNotification)
 
 	mail := mailGunClient.NewMessage("StatusOkNotifier <notify@StatusOk.com>", subject, message, fmt.Sprintf("<%s>", mailgunNotify.Email))
-	_, _, mailgunErr := mailGunClient.Send(context.Background(), mail)
+	_, _, mailgunErr := mailGunClient.Send(mail)
 
 	if mailgunErr != nil {
 		return mailgunErr
@@ -64,7 +63,7 @@ func (mailgunNotify MailgunNotify) SendErrorNotification(errorNotification Error
 	message := getMessageFromErrorNotification(errorNotification)
 
 	mail := mailGunClient.NewMessage("StatusOkNotifier <notify@StatusOk.com>", subject, message, fmt.Sprintf("<%s>", mailgunNotify.Email))
-	_, _, mailgunErr := mailGunClient.Send(context.Background(), mail)
+	_, _, mailgunErr := mailGunClient.Send(mail)
 
 	if mailgunErr != nil {
 		return mailgunErr

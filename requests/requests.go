@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/tcnksm/go-httpstat"
 
 	"github.com/CopiiDeco/statusok/database"
 )
@@ -192,7 +193,7 @@ func listenToRequestChannel() {
 
 }
 
-func GetOauthToken(requestConfig RequestConfig) (string, error) {
+func GetOauthToken(requestConfig RequestConfig,retry bool) (string, error) {
 	if Client == nil {
 		Init()
 	}
@@ -235,6 +236,14 @@ func GetOauthToken(requestConfig RequestConfig) (string, error) {
 	if respErr != nil {
 		return "", respErr
 	}
+
+	if retry && oauthResponse.ExpiresIn < 2 {
+		println("Oauth token expiring soon, waiting and asking a new one")
+		time.Sleep(2*time.Second)
+		println("Calling the new token")
+		return GetOauthToken(requestConfig,false)
+	}
+
 	return "Bearer " + oauthResponse.AccessToken, respErr
 
 }
@@ -324,7 +333,7 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 
 	if requestConfig.OauthCreds != nil {
 
-		oauthToken, reqErr := GetOauthToken(requestConfig)
+		oauthToken, reqErr := GetOauthToken(requestConfig,true)
 		if reqErr != nil || oauthToken == "" {
 			return errors.New(fmt.Sprintf("%v", reqErr))
 		} else if oauthToken == "" {
@@ -336,9 +345,14 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 	//Add headers to the request
 	AddHeaders(request, requestConfig.Headers)
 
-	start := time.Now()
-
+    // Create a httpstat powered context
+    var result httpstat.Result
+    ctx := httpstat.WithHTTPStat(request.Context(), &result)
+    request = request.WithContext(ctx)
+    start := time.Now()
 	getResponse, respErr := Client.Do(request)
+
+	elapsed := time.Since(start)
 
 	if respErr != nil {
 		//Request failed . Add error info to database
@@ -375,8 +389,6 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 		})
 		return errResposeCode(getResponse.StatusCode, requestConfig.ResponseCode)
 	}
-	elapsed := time.Since(start)
-
 	//Request succesfull . Add infomartion to Database
 	go database.AddRequestInfo(database.RequestInfo{
 		Id:                   requestConfig.Id,
@@ -385,6 +397,10 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 		ResponseCode:         getResponse.StatusCode,
 		ResponseTime:         elapsed.Nanoseconds() / 1000000,
 		ExpectedResponseTime: requestConfig.ResponseTime,
+		DnsLookupTime:        int(result.DNSLookup/time.Millisecond),
+        ConnectTime:          int(result.TCPConnection/time.Millisecond),
+        TlsHandshakeTime:     int(result.TLSHandshake/time.Millisecond),
+        ServerProcessingTime: int(result.ServerProcessing/time.Millisecond),
 	})
 
 	return nil
