@@ -191,7 +191,7 @@ func listenToRequestChannel() {
 
 }
 
-func GetOauthToken(requestConfig RequestConfig) (string, error) {
+func GetOauthToken(requestConfig RequestConfig,retry bool) (string, error) {
 	if Client == nil {
 		Init()
 	}
@@ -234,6 +234,14 @@ func GetOauthToken(requestConfig RequestConfig) (string, error) {
 	if respErr != nil {
 		return "", respErr
 	}
+
+	if retry && oauthResponse.ExpiresIn < 2 {
+		println("Oauth token expiring soon, waiting and asking a new one")
+		time.Sleep(2*time.Second)
+		println("Calling the new token")
+		return GetOauthToken(requestConfig,false)
+	}
+
 	return "Bearer " + oauthResponse.AccessToken, respErr
 
 }
@@ -323,7 +331,7 @@ func PerformRequest(requestConfig RequestConfig, throttle chan int) error {
 
 	if requestConfig.OauthCreds != nil {
 
-		oauthToken, reqErr := GetOauthToken(requestConfig)
+		oauthToken, reqErr := GetOauthToken(requestConfig,true)
 		if reqErr != nil || oauthToken == "" {
 			return errors.New(fmt.Sprintf("%v", reqErr))
 		} else if oauthToken == "" {
