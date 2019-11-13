@@ -142,11 +142,12 @@ func RequestsInit(data []RequestConfig, concurrency int) {
 			println("Type :", requestConfig.RequestType)
 			println("Error Reason :", reqErr.Error())
 			println("\nPlease check the config file and try again")
-			os.Exit(3)
+			//Disable exit because when we monitor multiple systems one can be down when starting up
+			//os.Exit(3)
 		}
 	}
 
-	println("All requests Successfull")
+	println("All requests tested")
 }
 
 //Start monitoring by calling createTicker method for each request
